@@ -1,0 +1,156 @@
+{
+    "parameters": {
+        "serverName": {
+            "type": "string"
+        },
+        "administratorLogin": {
+            "type": "string"
+        },
+        "administratorLoginPassword": {
+            "type": "securestring"
+        },
+        "databaseUsername": {
+            "type": "string"
+        },
+        "databasePassword": {
+            "type": "securestring"
+        },
+        "databaseName": {
+            "type": "string"
+        },
+        "edition": {
+            "type": "string"
+        },
+        "collation": {
+            "type": "string"
+        },
+        "maxSizeBytes": {
+            "type": "string"
+        },
+        "requestedServiceObjectiveId": {
+            "type": "string"
+        },
+        "serverLocation": {
+            "type": "string"
+        },
+        "name": {
+            "type": "string"
+        },
+        "hostingPlanName": {
+            "type": "string"
+        },
+        "hostingEnvironment": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "sku": {
+            "type": "string"
+        },
+        "skuCode": {
+            "type": "string"
+        },
+        "workerSize": {
+            "type": "string"
+        },
+        "serverFarmResourceGroup": {
+            "type": "string"
+        },
+        "subscriptionId": {
+            "type": "string"
+        },
+        "sampleName": {
+            "type": "string",
+            "defaultValue": ""
+        }
+    },
+    "resources": [
+        {
+            "name": "[parameters('name')]",
+            "type": "Microsoft.Web/sites",
+          "properties": {
+            "siteConfig": {
+              "connectionStrings": [
+                {
+                  "name": "defaultConnection",
+                  "type": "SQLAzure"
+                }
+              ]
+            },
+            "name": "[parameters('name')]",
+            "serverFarmId": "[concat('/subscriptions/', parameters('subscriptionId'),'/resourcegroups/', parameters('serverFarmResourceGroup'), '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]",
+            "hostingEnvironment": "[parameters('hostingEnvironment')]"
+          },
+            "apiVersion": "2016-03-01",
+            "location": "[parameters('location')]",
+            "tags": {
+                "[concat('hidden-related:', '/subscriptions/', parameters('subscriptionId'),'/resourcegroups/', parameters('serverFarmResourceGroup'), '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]": "empty"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]"
+            ]
+        },
+        {
+            "apiVersion": "2016-09-01",
+            "name": "[parameters('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[parameters('location')]",
+            "properties": {
+                "name": "[parameters('hostingPlanName')]",
+                "workerSizeId": "[parameters('workerSize')]",
+                "reserved": false,
+                "numberOfWorkers": "1",
+                "hostingEnvironment": "[parameters('hostingEnvironment')]"
+            },
+            "sku": {
+                "Tier": "[parameters('sku')]",
+                "Name": "[parameters('skuCode')]"
+            }
+        },
+        {
+            "name": "[parameters('serverName')]",
+            "type": "Microsoft.Sql/servers",
+            "location": "[parameters('serverLocation')]",
+            "apiVersion": "2014-04-01-preview",
+            "properties": {
+                "administratorLogin": "[parameters('administratorLogin')]",
+                "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+                "version": "12.0"
+            },
+            "resources": [
+                {
+                    "name": "[parameters('databaseName')]",
+                    "type": "databases",
+                    "location": "[parameters('serverLocation')]",
+                    "apiVersion": "2014-04-01-preview",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', parameters('serverName'))]"
+                    ],
+                    "properties": {
+                        "edition": "[parameters('edition')]",
+                        "collation": "[parameters('collation')]",
+                        "maxSizeBytes": "[parameters('maxSizeBytes')]",
+                        "sampleName":  "[parameters('sampleName')]",
+                        "requestedServiceObjectiveId": "[parameters('requestedServiceObjectiveId')]"
+                    }
+                },
+                {
+                    "apiVersion": "2014-04-01-preview",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', parameters('serverName'))]"
+                    ],
+                    "location": "[parameters('serverLocation')]",
+                    "name": "AllowAllWindowsAzureIps",
+                    "properties": {
+                        "endIpAddress": "0.0.0.0",
+                        "startIpAddress": "0.0.0.0"
+                    },
+                    "type": "firewallrules"
+                }
+            ]
+        }
+    ],
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0"
+}
